@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct {
+    int task_id;
+    int period;
+    int execution_time;
+    int deadline;
+    int remaining_time;
+} Task;
+
+int compare_by_period(const void *a, const void *b) {
+    Task *taskA = (Task *)a;
+    Task *taskB = (Task *)b;
+    return taskA->period - taskB->period;
+}
+
+int compare_by_deadline(const void *a, const void *b) {
+    Task *taskA = (Task *)a;
+    Task *taskB = (Task *)b;
+    return taskA->deadline - taskB->deadline;
+}
+
+void rate_monotonic_scheduling(Task tasks[], int n, int total_time) {
+    qsort(tasks, n, sizeof(Task), compare_by_period);
+
+    printf("Rate-Monotonic Scheduling:\n");
+    for (int time = 0; time < total_time; time++) {
+        for (int i = 0; i < n; i++) {
+            if (time % tasks[i].period == 0) {
+                tasks[i].remaining_time = tasks[i].execution_time;
+            }
+            if (tasks[i].remaining_time > 0) {
+                printf("Time %d: Task %d\n", time, tasks[i].task_id);
+                tasks[i].remaining_time--;
+                break;
+            }
+        }
+    }
+}
+
+void earliest_deadline_first(Task tasks[], int n, int total_time) {
+    printf("Earliest Deadline First Scheduling:\n");
+    for (int time = 0; time < total_time; time++) {
+        for (int i = 0; i < n; i++) {
+            if (time % tasks[i].period == 0) {
+                tasks[i].deadline = time + tasks[i].period;
+                tasks[i].remaining_time = tasks[i].execution_time;
+            }
+        }
+        qsort(tasks, n, sizeof(Task), compare_by_deadline);
+        for (int i = 0; i < n; i++) {
+            if (tasks[i].remaining_time > 0) {
+                printf("Time %d: Task %d\n", time, tasks[i].task_id);
+                tasks[i].remaining_time--;
+                break;
+            }
+        }
+    }
+}
+
+int main() {
+    Task tasks[] = {
+        {1, 5, 2, 0, 0},
+        {2, 7, 3, 0, 0},
+        {3, 10, 2, 0, 0}
+    };
+    int n = sizeof(tasks) / sizeof(tasks[0]);
+    int total_time = 20;
+
+    rate_monotonic_scheduling(tasks, n, total_time);
+    printf("\n");
+    earliest_deadline_first(tasks, n, total_time);
+
+    return 0;
+}
