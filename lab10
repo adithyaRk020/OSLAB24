@@ -1,120 +1,151 @@
 #include <stdio.h>
+#include <stdbool.h>
 
-#define MEMORY_SIZE 100
+#define NUM_FRAMES 3
+#define NUM_PAGES 10
 
-int memory[MEMORY_SIZE];
+int frames[NUM_FRAMES];
+int page_queue[NUM_PAGES];
+int page_index = 0;
 
-void initializeMemory() {
-    for (int i = 0; i < MEMORY_SIZE; i++) {
-        memory[i] = -1;
+void initializeFrames() {
+    for (int i = 0; i < NUM_FRAMES; i++) {
+        frames[i] = -1;
     }
 }
 
-void displayMemory() {
-    for (int i = 0; i < MEMORY_SIZE; i++) {
-        if (memory[i] == -1) {
+void displayFrames() {
+    for (int i = 0; i < NUM_FRAMES; i++) {
+        if (frames[i] == -1) {
             printf("[ ] ");
         } else {
-            printf("[*] ");
+            printf("[%d] ", frames[i]);
         }
     }
     printf("\n");
 }
 
-void firstFit(int processId, int processSize) {
-    for (int i = 0; i < MEMORY_SIZE; i++) {
-        if (memory[i] == -1) {
-            int j;
-            for (j = i; j < i + processSize; j++) {
-                if (j >= MEMORY_SIZE || memory[j] != -1) {
-                    break;
-                }
-            }
-            if (j - i == processSize) {
-                for (int k = i; k < j; k++) {
-                    memory[k] = processId;
-                }
-                printf("Process %d allocated using First Fit from memory location %d to %d\n", processId, i, j - 1);
-                return;
-            }
+bool isInFrames(int page) {
+    for (int i = 0; i < NUM_FRAMES; i++) {
+        if (frames[i] == page) {
+            return true;
         }
     }
-    printf("Process %d cannot be allocated using First Fit\n", processId);
+    return false;
 }
 
-void bestFit(int processId, int processSize) {
-    int bestFitStart = -1;
-    int bestFitSize = MEMORY_SIZE + 1;
-
-    for (int i = 0; i < MEMORY_SIZE; i++) {
-        if (memory[i] == -1) {
-            int j;
-            for (j = i; j < i + processSize; j++) {
-                if (j >= MEMORY_SIZE || memory[j] != -1) {
-                    break;
-                }
-            }
-            if (j - i == processSize && j - i < bestFitSize) {
-                bestFitStart = i;
-                bestFitSize = j - i;
-            }
+int getIndexOfPage(int page) {
+    for (int i = 0; i < NUM_FRAMES; i++) {
+        if (frames[i] == page) {
+            return i;
         }
     }
-
-    if (bestFitStart != -1) {
-        for (int k = bestFitStart; k < bestFitStart + processSize; k++) {
-            memory[k] = processId;
-        }
-        printf("Process %d allocated using Best Fit from memory location %d to %d\n", processId, bestFitStart, bestFitStart + processSize - 1);
-    } else {
-        printf("Process %d cannot be allocated using Best Fit\n", processId);
-    }
+    return -1;
 }
 
-void worstFit(int processId, int processSize) {
-    int worstFitStart = -1;
-    int worstFitSize = -1;
+int getLRUPage() {
+    int min_index = 0;
+    for (int i = 1; i < NUM_FRAMES; i++) {
+        if (page_queue[frames[i]] < page_queue[frames[min_index]]) {
+            min_index = i;
+        }
+    }
+    return min_index;
+}
 
-    for (int i = 0; i < MEMORY_SIZE; i++) {
-        if (memory[i] == -1) {
-            int j;
-            for (j = i; j < i + processSize; j++) {
-                if (j >= MEMORY_SIZE || memory[j] != -1) {
-                    break;
+void fifo(int pages[NUM_PAGES]) {
+    initializeFrames();
+    int page_faults = 0;
+
+    for (int i = 0; i < NUM_PAGES; i++) {
+        int page = pages[i];
+        if (!isInFrames(page)) {
+            frames[page_index] = page;
+            page_index = (page_index + 1) % NUM_FRAMES;
+            page_faults++;
+        }
+        displayFrames();
+    }
+
+    printf("FIFO Total Page Faults: %d\n", page_faults);
+}
+
+void lru(int pages[NUM_PAGES]) {
+    initializeFrames();
+    int page_faults = 0;
+
+    for (int i = 0; i < NUM_PAGES; i++) {
+        int page = pages[i];
+        page_queue[page]++;
+        if (!isInFrames(page)) {
+            int lru_index = getLRUPage();
+            frames[lru_index] = page;
+            page_faults++;
+        }
+        displayFrames();
+    }
+
+    printf("LRU Total Page Faults: %d\n", page_faults);
+}
+
+int findOptimal(int pages[NUM_PAGES], int start) {
+    int index = -1, farthest = start;
+    for (int i = 0; i < NUM_FRAMES; i++) {
+        int j;
+        for (j = start; j < NUM_PAGES; j++) {
+            if (frames[i] == pages[j]) {
+                if (j > farthest) {
+                    farthest = j;
+                    index = i;
                 }
-            }
-            if (j - i == processSize && j - i > worstFitSize) {
-                worstFitStart = i;
-                worstFitSize = j - i;
+                break;
             }
         }
+        if (j == NUM_PAGES) {
+            return i;
+        }
+    }
+    return (index == -1) ? 0 : index;
+}
+
+void optimal(int pages[NUM_PAGES]) {
+    initializeFrames();
+    int page_faults = 0;
+
+    for (int i = 0; i < NUM_PAGES; i++) {
+        int page = pages[i];
+        if (!isInFrames(page)) {
+            int replace_index = findOptimal(pages, i + 1);
+            frames[replace_index] = page;
+            page_faults++;
+        }
+        displayFrames();
     }
 
-    if (worstFitStart != -1) {
-        for (int k = worstFitStart; k < worstFitStart + processSize; k++) {
-            memory[k] = processId;
-        }
-        printf("Process %d allocated using Worst Fit from memory location %d to %d\n", processId, worstFitStart, worstFitStart + processSize - 1);
-    } else {
-        printf("Process %d cannot be allocated using Worst Fit\n", processId);
-    }
+    printf("Optimal Total Page Faults: %d\n", page_faults);
 }
 
 int main() {
-    initializeMemory();
-    displayMemory();
+    int pages[NUM_PAGES] = {1, 2, 3, 4, 1, 2, 5, 1, 2, 3};
 
-    firstFit(1, 20);
-    displayMemory();
+    printf("Page Reference String: ");
+    for (int i = 0; i < NUM_PAGES; i++) {
+        printf("%d ", pages[i]);
+    }
+    printf("\n\n");
 
-    bestFit(2, 10);
-    displayMemory();
+    printf("FIFO Page Replacement:\n");
+    fifo(pages);
+    printf("\n");
 
-    worstFit(3, 30);
-    displayMemory();
+    printf("LRU Page Replacement:\n");
+    lru(pages);
+    printf("\n");
 
-    firstFit(4, 50);
-    displayMemory();
+    printf("Optimal Page Replacement:\n");
+    optimal(pages);
+    printf("\n");
 
     return 0;
 }
+
