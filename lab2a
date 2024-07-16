@@ -1,0 +1,132 @@
+#include <stdio.h>
+typedef struct {
+ int pid;
+ int burst_time;
+ int priority;
+ int waiting_time;
+ int turnaround_time;
+ int remaining_time;
+} Process;
+void find_waiting_time_preemptive(Process proc[], int n) {
+9
+ int complete = 0, t = 0, min_priority = 10000;
+ int shortest = 0, finish_time;
+ int check = 0;
+ while (complete != n) {
+ for (int j = 0; j < n; j++) {
+ if ((proc[j].remaining_time > 0) && (proc[j].priority < min_priority)) {
+ min_priority = proc[j].priority;
+ shortest = j;
+ check = 1;
+ }
+ }
+ if (check == 0) {
+ t++;
+ continue;
+ }
+ proc[shortest].remaining_time--;
+ min_priority = proc[shortest].priority;
+ if (proc[shortest].remaining_time == 0) {
+ min_priority = 10000;
+ complete++;
+ finish_time = t + 1;
+ proc[shortest].waiting_time = finish_time - proc[shortest].burst_time;
+ proc[shortest].turnaround_time = finish_time;
+ }
+ t++;
+ }
+}
+void find_avg_time_preemptive(Process proc[], int n) {
+ int total_wt = 0, total_tat = 0;
+ find_waiting_time_preemptive(proc, n);
+ printf("Processes Burst Time Waiting Time Turnaround Time\n");
+ for (int i = 0; i < n; i++) {
+ total_wt += proc[i].waiting_time;
+ total_tat += proc[i].turnaround_time;
+ printf("%d\t\t%d\t\t%d\t\t%d\n", proc[i].pid, proc[i].burst_time,
+proc[i].waiting_time, proc[i].turnaround_time);
+ }
+10
+ printf("\nAverage waiting time = %.2f", (float) total_wt / (float) n);
+ printf("\nAverage turnaround time = %.2f\n", (float) total_tat / (float) n);
+}
+int main() {
+ int n;
+ printf("Enter number of processes: ");
+ scanf("%d", &n);
+ Process proc[n];
+ for (int i = 0; i < n; i++) {
+ printf("Enter burst time and priority for process %d: ", i + 1);
+ proc[i].pid = i + 1;
+ scanf("%d %d", &proc[i].burst_time, &proc[i].priority);
+ proc[i].remaining_time = proc[i].burst_time;
+ }
+ find_avg_time_preemptive(proc, n);
+ return 0;
+}
+#include <stdio.h>
+typedef struct {
+ int pid;
+ int burst_time;
+ int priority;
+ int waiting_time;
+ int turnaround_time;
+ int remaining_time;
+} Process;
+void find_waiting_time_preemptive(Process proc[], int n) {
+ int complete = 0, t = 0, min_priority = 10000;
+ int shortest = 0, finish_time;
+ int check = 0;
+ while (complete != n) {
+ for (int j = 0; j < n; j++) {
+ if ((proc[j].remaining_time > 0) && (proc[j].priority < min_priority)) {
+ min_priority = proc[j].priority;
+ shortest = j;
+ check = 1;
+ }
+ }
+11
+ if (check == 0) {
+ t++;
+ continue;
+ }
+ proc[shortest].remaining_time--;
+ min_priority = proc[shortest].priority;
+ if (proc[shortest].remaining_time == 0) {
+ min_priority = 10000;
+ complete++;
+ finish_time = t + 1;
+ proc[shortest].waiting_time = finish_time - proc[shortest].burst_time;
+ proc[shortest].turnaround_time = finish_time;
+ }
+ t++;
+ }
+}
+void find_avg_time_preemptive(Process proc[], int n) {
+ int total_wt = 0, total_tat = 0;
+ find_waiting_time_preemptive(proc, n);
+ printf("Processes Burst Time Waiting Time Turnaround Time\n");
+ for (int i = 0; i < n; i++) {
+ total_wt += proc[i].waiting_time;
+ total_tat += proc[i].turnaround_time;
+ printf("%d\t\t%d\t\t%d\t\t%d\n", proc[i].pid, proc[i].burst_time,
+proc[i].waiting_time, proc[i].turnaround_time);
+ }
+ printf("\nAverage waiting time = %.2f", (float) total_wt / (float) n);
+ printf("\nAverage turnaround time = %.2f\n", (float) total_tat / (float) n);
+}
+int main() {
+ int n;
+ printf("Enter number of processes: ");
+ scanf("%d", &n);
+ Process proc[n];
+ for (int i = 0; i < n; i++) {
+ printf("Enter burst time and priority for process %d: ", i + 1);
+ proc[i].pid = i + 1;
+ scanf("%d %d", &proc[i].burst_time, &proc[i].priority);
+12
+ proc[i].remaining_time = proc[i].burst_time;
+ }
+ find_avg_time_preemptive(proc, n);
+ return 0;
+}
