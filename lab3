@@ -1,0 +1,99 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_PROCESSES 10
+
+typedef struct {
+    int process_id;
+    int priority;
+    int burst_time;
+} Process;
+
+typedef struct {
+    Process processes[MAX_PROCESSES];
+    int front;
+    int rear;
+} Queue;
+
+void initialize_queue(Queue *q) {
+    q->front = -1;
+    q->rear = -1;
+}
+
+int is_empty(Queue *q) {
+    return q->front == -1;
+}
+
+int is_full(Queue *q) {
+    return q->rear == MAX_PROCESSES - 1;
+}
+
+void enqueue(Queue *q, Process p) {
+    if (is_full(q)) {
+        printf("Queue is full\n");
+        return;
+    }
+    if (is_empty(q)) {
+        q->front = 0;
+    }
+    q->rear++;
+    q->processes[q->rear] = p;
+}
+
+Process dequeue(Queue *q) {
+    Process p;
+    if (is_empty(q)) {
+        printf("Queue is empty\n");
+        p.process_id = -1;
+        return p;
+    }
+    p = q->processes[q->front];
+    if (q->front >= q->rear) {
+        q->front = q->rear = -1;
+    } else {
+        q->front++;
+    }
+    return p;
+}
+
+void multilevel_queue_scheduling(Process processes[], int n) {
+    Queue high_priority_queue, low_priority_queue;
+    initialize_queue(&high_priority_queue);
+    initialize_queue(&low_priority_queue);
+
+    for (int i = 0; i < n; i++) {
+        if (processes[i].priority == 0) {
+            enqueue(&high_priority_queue, processes[i]);
+        } else {
+            enqueue(&low_priority_queue, processes[i]);
+        }
+    }
+
+    printf("Executing High Priority Queue:\n");
+    while (!is_empty(&high_priority_queue)) {
+        Process p = dequeue(&high_priority_queue);
+        printf("Process ID: %d, Burst Time: %d\n", p.process_id, p.burst_time);
+    }
+
+    printf("Executing Low Priority Queue:\n");
+    while (!is_empty(&low_priority_queue)) {
+        Process p = dequeue(&low_priority_queue);
+        printf("Process ID: %d, Burst Time: %d\n", p.process_id, p.burst_time);
+    }
+}
+
+int main() {
+    Process processes[] = {
+        {1, 0, 5},
+        {2, 1, 3},
+        {3, 0, 2},
+        {4, 1, 1},
+        {5, 0, 4}
+    };
+
+    int n = sizeof(processes) / sizeof(processes[0]);
+
+    multilevel_queue_scheduling(processes, n);
+
+    return 0;
+}
